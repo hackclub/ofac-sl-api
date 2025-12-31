@@ -513,6 +513,15 @@ function buildSearchQuery(query: BatchSearchQuery): {
     return { error: baseFilters.error };
   }
 
+  // Adjust entityTypes for name search with first/last name BEFORE building WHERE
+  if (query.search_type === "name") {
+    const firstName = query.first_name?.trim();
+    const lastName = query.last_name?.trim();
+    if ((firstName || lastName) && !baseFilters.entityTypes.includes("Individual")) {
+      baseFilters.entityTypes = ["Individual"];
+    }
+  }
+
   const { wheres, params: baseParams } = buildBaseWhere(baseFilters);
   const joins: string[] = [];
   const queryInfo: Record<string, unknown> = {
@@ -540,10 +549,6 @@ function buildSearchQuery(query: BatchSearchQuery): {
 
       if (!name && !firstName && !lastName) {
         return { error: "At least one of name, first_name, or last_name is required" };
-      }
-
-      if ((firstName || lastName) && !baseFilters.entityTypes.includes("Individual")) {
-        baseFilters.entityTypes = ["Individual"];
       }
 
       queryInfo.name = name;

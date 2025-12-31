@@ -77,6 +77,10 @@ This API provides access to sanctions information for informational purposes onl
     },
     servers: [
       {
+        url: "https://ofac-sl.a.selfhosted.hackclub.com",
+        description: "Production server",
+      },
+      {
         url: "http://localhost:3000",
         description: "Development server",
       },
@@ -107,13 +111,14 @@ fastify.get("/", { schema: healthSchema }, async () => {
   };
 });
 
-fastify.get("/stats", { schema: statsSchema }, async () => {
+fastify.get("/stats", { schema: statsSchema }, async (_request, reply) => {
   try {
     return {
       ...computeStats(),
       last_fetched: getLastFetched()?.toISOString() ?? null,
     };
   } catch {
+    reply.code(503);
     return { success: false, message: "Database not initialized" };
   }
 });
@@ -165,10 +170,14 @@ fastify.get(
         ...searchGeneric(query),
         last_fetched: getLastFetched()?.toISOString() ?? null,
       };
+      if (result.success === false) {
+        reply.code(400);
+      }
       const humanOnly = handleHumanReadableOnly(request, reply, result);
       if (humanOnly !== null) return humanOnly;
       return result;
     } catch (err) {
+      reply.code(500);
       return {
         success: false,
         message: err instanceof Error ? err.message : "Search failed",
@@ -187,10 +196,14 @@ fastify.get(
         ...searchByName(query),
         last_fetched: getLastFetched()?.toISOString() ?? null,
       };
+      if (result.success === false) {
+        reply.code(400);
+      }
       const humanOnly = handleHumanReadableOnly(request, reply, result);
       if (humanOnly !== null) return humanOnly;
       return result;
     } catch (err) {
+      reply.code(500);
       return {
         success: false,
         message: err instanceof Error ? err.message : "Search failed",
@@ -209,10 +222,14 @@ fastify.get(
         ...searchByAddress(query),
         last_fetched: getLastFetched()?.toISOString() ?? null,
       };
+      if (result.success === false) {
+        reply.code(400);
+      }
       const humanOnly = handleHumanReadableOnly(request, reply, result);
       if (humanOnly !== null) return humanOnly;
       return result;
     } catch (err) {
+      reply.code(500);
       return {
         success: false,
         message: err instanceof Error ? err.message : "Search failed",
@@ -231,10 +248,14 @@ fastify.get(
         ...searchById(query),
         last_fetched: getLastFetched()?.toISOString() ?? null,
       };
+      if (result.success === false) {
+        reply.code(400);
+      }
       const humanOnly = handleHumanReadableOnly(request, reply, result);
       if (humanOnly !== null) return humanOnly;
       return result;
     } catch (err) {
+      reply.code(500);
       return {
         success: false,
         message: err instanceof Error ? err.message : "Search failed",
@@ -306,7 +327,8 @@ Each result includes the original \`id\` for matching, along with \`success\`, \
         properties: {
           queries: {
             type: "array",
-            description: "Array of search queries to execute",
+            description: "Array of search queries to execute (max 100)",
+            maxItems: 100,
             items: {
               type: "object",
               required: ["id", "search_type"],

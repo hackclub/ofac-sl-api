@@ -11,24 +11,34 @@ const TMP_DIR = join(process.cwd(), "tmp");
 const SDN_ZIP_PATH = join(TMP_DIR, "SDN_ENHANCED.ZIP");
 const CONS_ZIP_PATH = join(TMP_DIR, "CONS_ENHANCED.ZIP");
 
+const DOWNLOAD_TIMEOUT_MS = 60_000; // 60 seconds
+
 async function downloadFile(filename: string): Promise<Buffer> {
   const url = `${OFAC_API_BASE}/${filename}`;
   console.log(`Downloading ${url}...`);
 
-  const response = await fetch(url, {
-    redirect: "follow",
-    headers: {
-      "User-Agent": "ofac-sdn-api/1.0",
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
 
-  if (!response.ok) {
-    throw new Error(`Failed to download ${filename}: ${response.status} ${response.statusText}`);
+  try {
+    const response = await fetch(url, {
+      redirect: "follow",
+      headers: {
+        "User-Agent": "ofac-sdn-api/1.0",
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to download ${filename}: ${response.status} ${response.statusText}`);
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    console.log(`Downloaded ${filename}: ${buffer.length} bytes`);
+    return buffer;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const buffer = Buffer.from(await response.arrayBuffer());
-  console.log(`Downloaded ${filename}: ${buffer.length} bytes`);
-  return buffer;
 }
 
 async function unzipAndParse(zipBuffer: Buffer, zipFilename: string): Promise<SanctionsData> {

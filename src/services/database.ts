@@ -314,11 +314,16 @@ export function finalizeDatabase(): Database.Database {
 export function swapDatabase(newDb: Database.Database): void {
   const oldDb = db;
   db = newDb;
+  lastFetched = new Date();
+
+  // Delay closing old DB to allow in-flight requests to complete
   if (oldDb) {
-    try {
-      oldDb.close();
-    } catch (err) {
-      console.warn("Failed to close old database instance:", err);
-    }
+    setTimeout(() => {
+      try {
+        oldDb.close();
+      } catch {
+        // Already closed or GC'd
+      }
+    }, 30_000); // 30 seconds should be enough for any request to finish
   }
 }
