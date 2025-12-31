@@ -491,6 +491,7 @@ interface BatchSearchResult {
   total?: number;
   results?: SearchResultEntity[];
   human_readable?: string;
+  disclaimer?: string;
 }
 
 function buildSearchQuery(query: BatchSearchQuery): {

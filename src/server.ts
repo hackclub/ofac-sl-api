@@ -119,10 +119,7 @@ fastify.get("/stats", { schema: statsSchema }, async () => {
 });
 
 function handleHumanReadableOnly(
-  request: {
-    headers: { accept?: string };
-    query: Record<string, string | undefined>;
-  },
+  request: { headers: { accept?: string }; query: unknown },
   reply: { type: (t: string) => void },
   result: {
     success?: boolean;
