@@ -15,7 +15,7 @@
   "dependencies": {
     "@fastify/cors": "^11.2.0",
     "@fastify/swagger": "^9.6.1",
-    "@fastify/swagger-ui": "^5.2.3",
+    "@fastify/swagger-ui": "^5.2.5",
     "adm-zip": "^0.5.16",
     "better-sqlite3": "^12.5.0",
     "fast-xml-parser": "^5.3.3",
